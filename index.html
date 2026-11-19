@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MNH 전자결재</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{--ink:#1d1d1f;--sub:#6e6e73;--line:#e3e1dc;--bg:#f6f5f2;--card:#fff;--seal:#c62828;--blue:#1f5fbf;--green:#2e7d32;--r:14px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:15px;-webkit-text-size-adjust:100%}
+[hidden]{display:none!important}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:11px 16px;background:#ecebe7;color:var(--ink)}
+button.primary{background:var(--ink);color:#fff}
+button.danger{background:var(--seal);color:#fff}
+button.ghost{background:transparent;border:1px solid var(--line)}
+button.link{background:none;color:var(--sub);padding:8px;text-decoration:underline}
+button:disabled{opacity:.5}
+input,select,textarea{font:inherit;width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);margin:4px 0 12px}
+textarea{resize:vertical;line-height:1.6}
+label{font-size:13px;color:var(--sub);font-weight:600}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(246,245,242,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;letter-spacing:-.02em;cursor:pointer;display:flex;align-items:center;gap:8px}
+.brand .dot{width:22px;height:22px;border:2.5px solid var(--seal);border-radius:50%;display:inline-block}
+main{max-width:860px;margin:0 auto;padding:16px 16px 110px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.narrow{max-width:400px;margin:8vh auto 0}
+.center{text-align:center}
+.center input{text-align:center}
+.muted{color:var(--sub);font-size:14px}
+h1{font-size:22px;margin:12px 0 6px}
+h2{font-size:20px;margin:4px 0}
+h3{margin:0 0 14px}
+.code{font-size:24px;letter-spacing:8px}
+.bigseal{width:64px;height:64px;margin:auto;border:4px solid var(--seal);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--seal);font-weight:800;font-size:18px;transform:rotate(-8deg)}
+.full{width:100%}
+.row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px}
+.tabs button{white-space:nowrap;background:transparent;border:1px solid var(--line);padding:9px 14px}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.badge{display:inline-block;min-width:20px;padding:1px 6px;margin-left:4px;border-radius:10px;background:var(--seal);color:#fff;font-size:12px}
+.item{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;cursor:pointer}
+.item:active{background:#faf9f7}
+.item .t{font-weight:700;margin:4px 0}
+.item .m{font-size:13px;color:var(--sub);display:flex;gap:10px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:#eee}
+.st-진행중{background:#e8f0fc;color:var(--blue)}.st-완료{background:#e8f5e9;color:var(--green)}.st-반려{background:#fdecea;color:var(--seal)}.st-회수{background:#eee;color:#777}
+.empty{text-align:center;color:var(--sub);padding:48px 0}
+.fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));padding:15px 22px;border-radius:30px;box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:4}
+/* 문서 */
+.paper{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.dhead{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:16px;margin-bottom:16px}
+.dtype{font-size:13px;color:var(--seal);font-weight:700}
+.signwrap{overflow-x:auto;max-width:100%}
+table.sign{border-collapse:collapse;font-size:12px;text-align:center}
+table.sign td,table.sign th{border:1px solid #999;padding:0}
+table.sign th{width:22px;background:#faf9f7;font-weight:600;line-height:1.5}
+table.sign td.h{background:#faf9f7;padding:4px 6px;min-width:72px;white-space:nowrap}
+table.sign td.s{height:70px;width:76px}
+table.sign td.s img{width:58px;height:58px;object-fit:contain;mix-blend-mode:multiply;display:block;margin:auto}
+table.sign td.n{padding:4px 6px;white-space:nowrap}
+table.sign td.n small{display:block;color:var(--sub)}
+.rej{display:inline-block;border:2px solid var(--seal);color:var(--seal);font-weight:800;padding:4px 6px;transform:rotate(-8deg)}
+.wait{color:var(--blue);font-weight:600}
+dl.meta{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:14px;margin:0 0 18px}
+dl.meta dt{color:var(--sub)}dl.meta dd{margin:0}
+.body{white-space:pre-wrap;line-height:1.75;word-break:break-word;min-height:120px;padding:4px 0 16px}
+.files{border-top:1px solid var(--line);padding-top:12px}
+.file{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;font-size:14px;border-bottom:1px dashed var(--line)}
+.file span{word-break:break-all}
+.file button{padding:6px 12px;font-size:13px}
+.log{margin-top:16px}
+.log div{font-size:13px;padding:8px 0;border-bottom:1px solid var(--line)}
+.log b{margin-right:6px}
+.log .c{display:block;margin-top:4px;color:var(--ink);background:#faf9f7;padding:8px;border-radius:8px;white-space:pre-wrap}
+.actions{position:sticky;bottom:0;background:rgba(246,245,242,.95);padding:12px 0 calc(12px + env(safe-area-inset-bottom));margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+/* 작성 */
+.lineitem{display:flex;align-items:center;gap:8px;background:#faf9f7;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:6px}
+.lineitem .no{width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.lineitem .who{flex:1;font-size:14px}
+.lineitem button{padding:6px 10px;background:#fff;border:1px solid var(--line)}
+.stampbox{width:110px;height:110px;border:1px dashed #bbb;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#fff;margin:6px 0 10px}
+.stampbox img{max-width:90px;max-height:90px}
+.sec{margin-top:22px}
+/* 모달·토스트 */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+#modal .sheet{background:#fff;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom))}
+@media(min-width:600px){#modal{align-items:center}#modal .sheet{border-radius:18px}}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;opacity:0;transition:.25s;z-index:30;max-width:90vw;font-size:14px;pointer-events:none}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#loading{position:fixed;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;background:rgba(246,245,242,.5)}
+#loading div{width:36px;height:36px;border:3px solid #ccc;border-top-color:var(--seal);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media print{
+  header,.tabs,.actions,.fab,#toast,.log,.noprint{display:none!important}
+  body,main{background:#fff;padding:0}
+  .paper{border:0;padding:0}
+  .files button{display:none}
+}
+</style>
+</head>
+<body>
+<header id="top" hidden>
+  <div class="brand" id="home"><span class="dot"></span>MNH 전자결재</div>
+  <button id="meBtn" class="ghost"></button>
+</header>
+
+<main>
+  <!-- 로그인 -->
+  <section id="vLogin" hidden>
+    <div class="card narrow center">
+      <div class="bigseal">결재</div>
+      <h1>MNH 전자결재</h1>
+      <p class="muted">회사 메일(메일플러그) 주소로 로그인하세요.<br>한 번 로그인하면 30일 동안 유지됩니다.</p>
+      <div id="step1">
+        <input id="lEmail" type="email" placeholder="회사 메일 주소" autocomplete="email">
+        <button id="lSend" class="primary full">인증코드 받기</button>
+      </div>
+      <div id="step2" hidden>
+        <p class="muted" id="lSentTo"></p>
+        <input id="lCode" class="code" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+        <button id="lVerify" class="primary full">로그인</button>
+        <button id="lBack" class="link">메일 주소 다시 입력</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 첫 로그인 설정 -->
+  <section id="vSetup" hidden>
+    <div class="card narrow">
+      <h2>처음 설정</h2>
+      <p class="muted">결재 비밀번호는 문서에 날인할 때만 입력합니다.</p>
+      <label>결재 비밀번호 (숫자 4~8자리)</label>
+      <input id="suPin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password">
+      <label>비밀번호 확인</label>
+      <input id="suPin2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password">
+      <label>도장 이미지 (선택)</label>
+      <p class="muted" style="margin:4px 0">흰 종이에 찍은 도장 사진도 됩니다. 흰 배경은 자동으로 지워져요. 등록하지 않으면 이름 도장이 자동으로 찍힙니다.</p>
+      <div class="stampbox" id="suPrev"></div>
+      <input id="suStamp" type="file" accept="image/*">
+      <button id="suDone" class="primary full">설정 완료</button>
+    </div>
+  </section>
+
+  <!-- 목록 -->
+  <section id="vHome" hidden>
+    <div class="tabs" id="tabs"></div>
+    <div id="list"></div>
+    <button class="primary fab" id="newBtn">＋ 새 보고서</button>
+  </section>
+
+  <!-- 작성 -->
+  <section id="vCompose" hidden>
+    <div class="card">
+      <h2 id="cHead">새 보고서</h2>
+      <div class="sec">
+        <label>문서 종류</label>
+        <select id="cType"></select>
+        <label>제목</label>
+        <input id="cTitle" maxlength="200">
+        <label>내용</label>
+        <textarea id="cBody" rows="12" placeholder="보고 내용을 입력하세요"></textarea>
+      </div>
+      <div class="sec">
+        <label>첨부파일 (파일당 <span id="cMax">10</span>MB까지 · PDF, 한글, 엑셀, 이미지 등)</label>
+        <div id="cFiles"></div>
+        <input id="cFileIn" type="file" multiple>
+      </div>
+      <div class="sec">
+        <label>결재 라인 (위에서부터 순서대로 결재)</label>
+        <div id="cLine" style="margin-top:6px"></div>
+        <select id="cAdd"></select>
+      </div>
+      <div class="actions">
+        <button class="ghost" id="cCancel">취소</button>
+        <button class="primary" id="cSubmit">결재 요청</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 문서 보기 -->
+  <section id="vDoc" hidden></section>
+
+  <!-- 내 정보 -->
+  <section id="vMe" hidden>
+    <div class="card">
+      <h2 id="meName"></h2>
+      <p class="muted" id="meInfo"></p>
+      <div class="sec">
+        <label>내 도장</label>
+        <div class="stampbox" id="meStamp"></div>
+        <input id="meStampIn" type="file" accept="image/*">
+        <button id="meStampSave" class="primary" hidden>이 도장으로 저장</button>
+      </div>
+      <div class="sec">
+        <label>결재 비밀번호 변경</label>
+        <input id="mePinOld" type="password" inputmode="numeric" maxlength="8" placeholder="현재 비밀번호" autocomplete="current-password">
+        <input id="mePinNew" type="password" inputmode="numeric" maxlength="8" placeholder="새 비밀번호 (숫자 4~8자리)" autocomplete="new-password">
+        <input id="mePinNew2" type="password" inputmode="numeric" maxlength="8" placeholder="새 비밀번호 확인" autocomplete="new-password">
+        <button id="mePinSave">비밀번호 변경</button>
+        <p class="muted">비밀번호를 잊으면 관리자에게 초기화를 요청하세요.</p>
+      </div>
+      <div class="sec row">
+        <button class="ghost" id="meBack">돌아가기</button>
+        <button class="danger" id="meLogout">로그아웃</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="modal" hidden><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+<div id="loading" hidden><div></div></div>
+
+<script>
+/* ▼ Apps Script 웹 앱 URL을 붙여넣으세요 */
+const API_URL = 'https://script.google.com/macros/s/AKfycbycbZ2MPJNhd74FG4aT-ReOYYHpBmufHn37CY5mYAdJ_HSkiE9nitc3VNPUZAB60Nx4vg/exec';
+
+const $ = s => document.querySelector(s);
+const VIEWS = ['vLogin', 'vSetup', 'vHome', 'vCompose', 'vDoc', 'vMe'];
+const EMPTY = { todo: '결재할 문서가 없습니다', mine: '올린 문서가 없습니다', done: '결재한 문서가 없습니다', all: '문서가 없습니다' };
+const S = { token: store('tok'), me: null, approvers: [], docTypes: [], box: 'todo', todo: 0 };
+
+function store(k, v) {
+  try {
+    if (v === undefined) return localStorage.getItem('mnh_appr_' + k) || '';
+    v ? localStorage.setItem('mnh_appr_' + k, v) : localStorage.removeItem('mnh_appr_' + k);
+  } catch (e) { return ''; }
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function toast(m) { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2800); }
+function show(v) { VIEWS.forEach(x => $('#' + x).hidden = x !== v); $('#top').hidden = (v === 'vLogin' || v === 'vSetup'); window.scrollTo(0, 0); }
+function md(s) { return s ? s.slice(5, 10).replace('-', '.') : ''; }
+function kb(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB'; }
+
+async function api(action, payload = {}) {
+  const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, token: S.token, payload }) });
+  const j = await r.json();
+  if (!j.ok) {
+    if (j.auth) { S.token = ''; store('tok', ''); showLogin(); }
+    throw new Error(j.error || '오류가 발생했습니다');
+  }
+  return j.data;
+}
+async function run(fn) {
+  $('#loading').hidden = false;
+  try { return await fn(); }
+  catch (e) { toast(e.message === 'Failed to fetch' ? '서버에 연결하지 못했습니다' : e.message); return undefined; }
+  finally { $('#loading').hidden = true; }
+}
+function enter(input, btn) { $(input).addEventListener('keydown', e => { if (e.key === 'Enter') $(btn).click(); }); }
+
+/* 이름 도장 (도장 이미지가 없을 때) */
+function seal(name) {
+  const n = String(name || '').slice(0, 4);
+  const fs = n.length <= 2 ? 32 : n.length === 3 ? 25 : 20;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#c62828" stroke-width="5"/><text x="50" y="50" dy=".36em" text-anchor="middle" font-family="serif" font-weight="700" font-size="${fs}" fill="#c62828">${esc(n)}</text></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
+/* ───── 시작 ───── */
+async function boot() {
+  if (!/^https:/.test(API_URL)) { document.body.innerHTML = '<p style="padding:24px">index.html 위쪽의 API_URL에 Apps Script 웹 앱 주소를 넣어주세요.</p>'; return; }
+  const q = new URLSearchParams(location.search).get('doc');
+  if (q) store('openDoc', q);
+  if (!S.token) return showLogin();
+  if (await loadInit()) afterLogin();
+}
+async function loadInit() {
+  const d = await run(() => api('init'));
+  if (!d) return false;
+  Object.assign(S, { me: d.me, approvers: d.approvers, docTypes: d.docTypes, todo: d.todo, maxMb: d.maxFileMb });
+  return true;
+}
+function afterLogin() {
+  $('#meBtn').textContent = S.me.name + ' ' + (S.me.title || S.me.role);
+  if (!S.me.hasPin) return showSetup();
+  const pending = store('openDoc');
+  if (pending) { store('openDoc', ''); history.replaceState(null, '', location.pathname); return openDoc(pending); }
+  goHome(S.todo ? 'todo' : (S.box || 'todo'));
+}
+
+/* ───── 로그인 ───── */
+function showLogin() { $('#step1').hidden = false; $('#step2').hidden = true; show('vLogin'); }
+$('#lSend').onclick = async () => {
+  const email = $('#lEmail').value.trim();
+  if (!email) return toast('메일 주소를 입력하세요');
+  const r = await run(() => api('requestCode', { email }));
+  if (!r) return;
+  S.loginEmail = email;
+  $('#lSentTo').textContent = email + ' 로 인증코드를 보냈습니다. 메일플러그 메일함을 확인하세요.';
+  $('#step1').hidden = true; $('#step2').hidden = false; $('#lCode').value = ''; $('#lCode').focus();
+};
+$('#lVerify').onclick = async () => {
+  const r = await run(() => api('verifyCode', { email: S.loginEmail, code: $('#lCode').value.trim() }));
+  if (!r) return;
+  S.token = r.token; store('tok', r.token);
+  if (await loadInit()) afterLogin();
+};
+$('#lBack').onclick = showLogin;
+enter('#lEmail', '#lSend'); enter('#lCode', '#lVerify');
+
+/* ───── 도장 이미지 처리: 축소 + 흰 배경 제거 ───── */
+function processStamp(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const sc = Math.min(1, 240 / Math.max(img.width, img.height));
+      const w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const x = c.getContext('2d'); x.drawImage(img, 0, 0, w, h);
+      const d = x.getImageData(0, 0, w, h), p = d.data;
+      for (let i = 0; i < p.length; i += 4) {
+        const r = p[i], g = p[i + 1], b = p[i + 2];
+        if ((r + g + b) / 3 > 195 && Math.max(r, g, b) - Math.min(r, g, b) < 45) p[i + 3] = 0;
+      }
+      x.putImageData(d, 0, 0); URL.revokeObjectURL(url);
+      res(c.toDataURL('image/png'));
+    };
+    img.onerror = () => rej(new Error('이미지를 읽지 못했습니다'));
+    img.src = url;
+  });
+}
+
+/* ───── 첫 설정 ───── */
+function showSetup() { S.newStamp = ''; $('#suPrev').innerHTML = `<img src="${seal(S.me.name)}">`; show('vSetup'); }
+$('#suStamp').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { S.newStamp = await processStamp(f); $('#suPrev').innerHTML = `<img src="${S.newStamp}">`; } catch (err) { toast(err.message); }
+};
+$('#suDone').onclick = async () => {
+  const a = $('#suPin').value, b = $('#suPin2').value;
+  if (!/^\d{4,8}$/.test(a)) return toast('결재 비밀번호는 숫자 4~8자리로 정해주세요');
+  if (a !== b) return toast('비밀번호가 서로 다릅니다');
+  const ok = await run(async () => {
+    await api('setPin', { pin: a });
+    if (S.newStamp) await api('uploadStamp', { data: S.newStamp });
+    return true;
+  });
+  if (!ok) return;
+  S.me.hasPin = true; if (S.newStamp) S.me.hasStamp = true;
+  toast('설정이 끝났습니다'); afterLogin();
+};
+
+/* ───── 목록 ───── */
+function renderTabs() {
+  const tabs = [['todo', '결재 대기'], ['mine', '내가 올린 문서'], ['done', '내가 결재한 문서']];
+  if (S.me.isAdmin) tabs.push(['all', '전체 문서']);
+  $('#tabs').innerHTML = tabs.map(([k, l]) => `<button data-box="${k}" class="${S.box === k ? 'on' : ''}">${l}${k === 'todo' && S.todo ? `<span class="badge">${S.todo}</span>` : ''}</button>`).join('');
+}
+$('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) goHome(b.dataset.box); };
+async function goHome(box) {
+  if (box) S.box = box;
+  show('vHome'); renderTabs();
+  $('#list').innerHTML = '<p class="empty">불러오는 중…</p>';
+  const r = await run(() => api('list', { box: S.box }));
+  if (!r) { $('#list').innerHTML = '<p class="empty">목록을 불러오지 못했습니다</p>'; return; }
+  if (S.box === 'todo') { S.todo = r.length; renderTabs(); }
+  $('#list').innerHTML = r.length ? r.map(d => `
+    <div class="item" data-id="${esc(d.id)}">
+      <div class="m"><span class="chip st-${esc(d.status)}">${esc(d.status)}</span><span>${esc(d.type)}</span><span>${esc(d.id)}</span></div>
+      <div class="t">${esc(d.title)}${d.files ? ' 📎' : ''}</div>
+      <div class="m"><span>${esc(d.drafter)} · ${esc(d.dept)}</span><span>${esc(d.createdAt)}</span><span>결재 ${esc(d.progress)}${d.current ? ' · 대기: ' + esc(d.current) : ''}</span></div>
+    </div>`).join('') : `<p class="empty">${EMPTY[S.box]}</p>`;
+}
+$('#list').onclick = e => { const it = e.target.closest('.item'); if (it) openDoc(it.dataset.id); };
+$('#home').onclick = () => goHome();
+$('#newBtn').onclick = () => showCompose();
+
+/* ───── 문서 보기 ───── */
+async function openDoc(id) {
+  const r = await run(() => api('get', { id }));
+  if (!r) return goHome();
+  S.doc = r; renderDoc(r); show('vDoc');
+}
+function renderDoc({ doc, stamps, log, can }) {
+  const img = (id, name) => `<img src="${(id && stamps[id]) || seal(name)}" alt="${esc(name)} 도장">`;
+  const cells = [{ h: '기안', n: doc.drafter, s: img(doc.drafterStamp, doc.drafter), t: md(doc.createdAt) }]
+    .concat(doc.line.map((a, i) => ({
+      h: a.title, n: a.name, t: md(a.at),
+      s: a.status === '승인' ? img(a.stampId, a.name)
+        : a.status === '반려' ? '<span class="rej">반려</span>'
+        : (doc.status === '진행중' && i === doc.step ? '<span class="wait">대기</span>' : '')
+    })));
+  const comments = log.filter(l => l.comment || l.action !== '승인');
+  $('#vDoc').innerHTML = `
+    <div class="paper">
+      <div class="dhead">
+        <div><div class="dtype">${esc(doc.type)}</div><h2>${esc(doc.title)}</h2></div>
+        <div class="signwrap"><table class="sign">
+          <tr><th rowspan="3">결<br>재</th>${cells.map(c => `<td class="h">${esc(c.h)}</td>`).join('')}</tr>
+          <tr>${cells.map(c => `<td class="s">${c.s}</td>`).join('')}</tr>
+          <tr>${cells.map(c => `<td class="n">${esc(c.n)}<small>${esc(c.t) || '&nbsp;'}</small></td>`).join('')}</tr>
+        </table></div>
+      </div>
+      <dl class="meta">
+        <dt>문서번호</dt><dd>${esc(doc.id)}</dd>
+        <dt>기안자</dt><dd>${esc(doc.drafter)} (${esc(doc.dept)})</dd>
+        <dt>기안일</dt><dd>${esc(doc.createdAt)}</dd>
+        <dt>상태</dt><dd><span class="chip st-${esc(doc.status)}">${esc(doc.status)}</span>${doc.doneAt ? ' ' + esc(doc.doneAt) + ' 완료' : ''}</dd>
+      </dl>
+      <div class="body">${esc(doc.content) || '<span class="muted">(본문 없음)</span>'}</div>
+      ${doc.files.length ? `<div class="files"><label>첨부파일</label>${doc.files.map(f => `
+        <div class="file"><span>📎 ${esc(f.name)} <small class="muted">${kb(f.size)}</small></span><button data-file="${esc(f.id)}">받기</button></div>`).join('')}</div>` : ''}
+      ${doc.line.some(a => a.comment) ? `<div class="files" style="margin-top:12px"><label>결재 의견</label>${doc.line.filter(a => a.comment).map(a => `
+        <div class="file"><span><b>${esc(a.name)} ${esc(a.title)}</b> · ${esc(a.status)}<br>${esc(a.comment)}</span></div>`).join('')}</div>` : ''}
+    </div>
+    <div class="log">
+      <label>처리 이력</label>
+      ${log.map(l => `<div><b>${esc(l.action)}</b>${esc(l.name)} <span class="muted">${esc(l.at)}</span>${l.comment ? `<span class="c">${esc(l.comment)}</span>` : ''}</div>`).join('')}
+    </div>
+    <div class="actions">
+      <button class="ghost" id="dBack">목록</button>
+      <button class="ghost" id="dPrint">인쇄 / PDF</button>
+      ${can.withdraw ? '<button id="dWithdraw">회수</button>' : ''}
+      ${can.resubmit ? '<button class="primary" id="dResubmit">수정해서 다시 올리기</button>' : ''}
+      ${can.decide ? '<button class="danger" id="dReject">반려</button><button class="primary" id="dApprove">승인 · 날인</button>' : ''}
+    </div>`;
+  $('#dBack').onclick = () => goHome();
+  $('#dPrint').onclick = () => window.print();
+  if (can.withdraw) $('#dWithdraw').onclick = withdraw;
+  if (can.resubmit) $('#dResubmit').onclick = () => showCompose(doc);
+  if (can.decide) { $('#dApprove').onclick = () => decideModal(true); $('#dReject').onclick = () => decideModal(false); }
+}
+$('#vDoc').addEventListener('click', async e => {
+  const b = e.target.closest('[data-file]'); if (!b) return;
+  const r = await run(() => api('download', { id: S.doc.doc.id, fileId: b.dataset.file }));
+  if (!r) return;
+  const bin = atob(r.data), arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([arr], { type: r.mime }));
+  const a = document.createElement('a'); a.href = url; a.download = r.name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+});
+
+function modal(html) { $('#sheet').innerHTML = html; $('#modal').hidden = false; }
+function closeModal() { $('#modal').hidden = true; $('#sheet').innerHTML = ''; }
+$('#modal').onclick = e => { if (e.target.id === 'modal' || e.target.hasAttribute('data-close')) closeModal(); };
+
+function decideModal(ok) {
+  modal(`<h3>${ok ? '승인 · 날인' : '반려'}</h3>
+    <label>${ok ? '의견 (선택)' : '반려 사유 (필수)'}</label>
+    <textarea id="mC" rows="3"></textarea>
+    <label>결재 비밀번호</label>
+    <input id="mP" type="password" inputmode="numeric" maxlength="8" autocomplete="off">
+    <div class="row"><button class="ghost" data-close>취소</button><button id="mGo" class="${ok ? 'primary' : 'danger'}">${ok ? '날인하기' : '반려하기'}</button></div>`);
+  enter('#mP', '#mGo');
+  $('#mGo').onclick = async () => {
+    const comment = $('#mC').value.trim(), pin = $('#mP').value;
+    if (!ok && !comment) return toast('반려 사유를 입력하세요');
+    if (!pin) return toast('결재 비밀번호를 입력하세요');
+    const r = await run(() => api(ok ? 'approve' : 'reject', { id: S.doc.doc.id, pin, comment }));
+    if (!r) { $('#mP').value = ''; return; }
+    closeModal();
+    toast(ok ? (r.status === '완료' ? '최종 결재가 끝났습니다' : '날인했습니다. 다음 결재자에게 넘어갑니다') : '반려했습니다. 기안자에게 돌아갑니다');
+    S.todo = Math.max(0, S.todo - 1);
+    openDoc(S.doc.doc.id);
+  };
+}
+async function withdraw() {
+  if (!confirm('이 문서를 회수할까요? 회수 후 수정해서 다시 올릴 수 있습니다.')) return;
+  const r = await run(() => api('withdraw', { id: S.doc.doc.id }));
+  if (r) { toast('회수했습니다'); openDoc(S.doc.doc.id); }
+}
+
+/* ───── 작성 ───── */
+function defaultLine() {
+  const A = S.approvers, pick = [];
+  const head = A.find(a => a.role === '부서장' && a.dept === S.me.dept); if (head) pick.push(head.email);
+  const dir = A.find(a => a.role === '이사'); if (dir) pick.push(dir.email);
+  const ceo = A.find(a => a.role === '대표'); if (ceo) pick.push(ceo.email);
+  return pick;
+}
+function showCompose(doc) {
+  S.edit = doc || null; S.files = [];
+  S.keep = doc ? doc.files.slice() : [];
+  S.line = doc ? doc.line.map(a => a.email).filter(e => S.approvers.some(x => x.email === e)) : defaultLine();
+  $('#cHead').textContent = doc ? '수정해서 다시 올리기' : '새 보고서';
+  $('#cType').innerHTML = S.docTypes.map(t => `<option>${esc(t)}</option>`).join('');
+  $('#cType').value = doc ? doc.type : S.docTypes[0];
+  $('#cTitle').value = doc ? doc.title : '';
+  $('#cBody').value = doc ? doc.content : '';
+  $('#cMax').textContent = S.maxMb || 10;
+  renderFiles(); renderLine(); show('vCompose');
+}
+function renderFiles() {
+  $('#cFiles').innerHTML = S.keep.map((f, i) => `<div class="file"><span>📎 ${esc(f.name)} <small class="muted">${kb(f.size)}</small></span><button data-k="${i}">삭제</button></div>`).join('')
+    + S.files.map((f, i) => `<div class="file"><span>📎 ${esc(f.name)} <small class="muted">${kb(f.size)} · 새 파일</small></span><button data-n="${i}">삭제</button></div>`).join('');
+}
+$('#cFiles').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.k != null) S.keep.splice(+b.dataset.k, 1); else S.files.splice(+b.dataset.n, 1);
+  renderFiles();
+};
+$('#cFileIn').onchange = e => {
+  const max = (S.maxMb || 10) * 1048576;
+  [...e.target.files].forEach(f => { if (f.size > max) toast(f.name + ': 파일이 너무 큽니다'); else S.files.push(f); });
+  e.target.value = ''; renderFiles();
+};
+function renderLine() {
+  const by = Object.fromEntries(S.approvers.map(a => [a.email, a]));
+  $('#cLine').innerHTML = S.line.length ? S.line.map((em, i) => {
+    const a = by[em];
+    return `<div class="lineitem"><span class="no">${i + 1}</span><span class="who"><b>${esc(a.name)}</b> ${esc(a.title || a.role)} <span class="muted">· ${esc(a.dept)}</span></span>
+      <button data-up="${i}" ${i ? '' : 'disabled'}>↑</button><button data-down="${i}" ${i < S.line.length - 1 ? '' : 'disabled'}>↓</button><button data-del="${i}">✕</button></div>`;
+  }).join('') : '<p class="muted">결재자를 추가하세요</p>';
+  const rest = S.approvers.filter(a => !S.line.includes(a.email));
+  $('#cAdd').innerHTML = '<option value="">＋ 결재자 추가</option>' + ['부서장', '이사', '대표'].map(r => {
+    const g = rest.filter(a => a.role === r);
+    return g.length ? `<optgroup label="${r}">${g.map(a => `<option value="${esc(a.email)}">${esc(a.name)} ${esc(a.title || a.role)} · ${esc(a.dept)}</option>`).join('')}</optgroup>` : '';
+  }).join('');
+  $('#cAdd').hidden = !rest.length;
+}
+$('#cLine').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const L = S.line;
+  if (b.dataset.up) { const i = +b.dataset.up; [L[i - 1], L[i]] = [L[i], L[i - 1]]; }
+  else if (b.dataset.down) { const i = +b.dataset.down; [L[i + 1], L[i]] = [L[i], L[i + 1]]; }
+  else if (b.dataset.del) L.splice(+b.dataset.del, 1);
+  renderLine();
+};
+$('#cAdd').onchange = e => { if (e.target.value) { S.line.push(e.target.value); renderLine(); } };
+$('#cCancel').onclick = () => S.edit ? openDoc(S.edit.id) : goHome();
+
+function readData(f) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error(f.name + ' 파일을 읽지 못했습니다')); r.readAsDataURL(f); });
+}
+$('#cSubmit').onclick = async () => {
+  const title = $('#cTitle').value.trim();
+  if (!title) return toast('제목을 입력하세요');
+  if (!S.line.length) return toast('결재자를 한 명 이상 지정하세요');
+  const total = S.files.reduce((s, f) => s + f.size, 0);
+  if (total > 30 * 1048576) return toast('새 첨부파일은 한 번에 30MB까지 올릴 수 있습니다');
+  const by = Object.fromEntries(S.approvers.map(a => [a.email, a]));
+  if (!confirm('결재 요청을 보낼까요?\n\n결재 순서: ' + S.line.map(e => by[e].name).join(' → '))) return;
+  const r = await run(async () => {
+    const files = await Promise.all(S.files.map(async f => ({ name: f.name, data: await readData(f) })));
+    return api('submit', { id: S.edit ? S.edit.id : '', type: $('#cType').value, title, content: $('#cBody').value, line: S.line, files, keepFiles: S.keep.map(f => f.id) });
+  });
+  if (!r) return;
+  toast('결재 요청을 보냈습니다');
+  openDoc(r.id);
+};
+
+/* ───── 내 정보 ───── */
+$('#meBtn').onclick = async () => {
+  $('#meName').textContent = S.me.name;
+  $('#meInfo').textContent = [S.me.dept, S.me.title, S.me.role, S.me.email].filter(Boolean).join(' · ');
+  $('#meStampSave').hidden = true; S.newStamp = '';
+  ['#mePinOld', '#mePinNew', '#mePinNew2'].forEach(s => $(s).value = '');
+  $('#meStamp').innerHTML = `<img src="${seal(S.me.name)}">`;
+  show('vMe');
+  if (S.me.hasStamp) { const r = await run(() => api('myStamp')); if (r && r.stamp) $('#meStamp').innerHTML = `<img src="${r.stamp}">`; }
+};
+$('#meStampIn').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { S.newStamp = await processStamp(f); $('#meStamp').innerHTML = `<img src="${S.newStamp}">`; $('#meStampSave').hidden = false; } catch (err) { toast(err.message); }
+  e.target.value = '';
+};
+$('#meStampSave').onclick = async () => {
+  const r = await run(() => api('uploadStamp', { data: S.newStamp }));
+  if (r) { S.me.hasStamp = true; $('#meStampSave').hidden = true; toast('도장을 저장했습니다. 앞으로 결재부터 적용됩니다'); }
+};
+$('#mePinSave').onclick = async () => {
+  const o = $('#mePinOld').value, a = $('#mePinNew').value, b = $('#mePinNew2').value;
+  if (!/^\d{4,8}$/.test(a)) return toast('새 비밀번호는 숫자 4~8자리로 정해주세요');
+  if (a !== b) return toast('새 비밀번호가 서로 다릅니다');
+  const r = await run(() => api('setPin', { oldPin: o, pin: a }));
+  if (r) { toast('결재 비밀번호를 바꿨습니다'); ['#mePinOld', '#mePinNew', '#mePinNew2'].forEach(s => $(s).value = ''); }
+};
+$('#meBack').onclick = () => goHome();
+$('#meLogout').onclick = async () => {
+  if (!confirm('로그아웃할까요?')) return;
+  await run(() => api('logout'));
+  S.token = ''; store('tok', ''); showLogin();
+};
+
+boot();
+</script>
+</body>
+</html>
