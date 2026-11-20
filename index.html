@@ -112,9 +112,16 @@ dl.meta dt{color:var(--sub)}dl.meta dd{margin:0}
       <div class="bigseal">결재</div>
       <h1>MNH 전자결재</h1>
       <p class="muted">회사 메일(메일플러그) 주소로 로그인하세요.<br>한 번 로그인하면 30일 동안 유지됩니다.</p>
-      <div id="step1">
+      <div id="stepPw">
+        <input id="pEmail" type="email" placeholder="회사 메일 주소" autocomplete="username">
+        <input id="pPw" type="password" placeholder="로그인 비밀번호" autocomplete="current-password">
+        <button id="pLogin" class="primary full">로그인</button>
+        <button id="toCode" class="link">처음이거나 비밀번호를 잊었다면 → 메일 인증코드로 로그인</button>
+      </div>
+      <div id="step1" hidden>
         <input id="lEmail" type="email" placeholder="회사 메일 주소" autocomplete="email">
         <button id="lSend" class="primary full">인증코드 받기</button>
+        <button id="toPw" class="link">비밀번호로 로그인</button>
       </div>
       <div id="step2" hidden>
         <p class="muted" id="lSentTo"></p>
@@ -129,6 +136,14 @@ dl.meta dt{color:var(--sub)}dl.meta dd{margin:0}
   <section id="vSetup" hidden>
     <div class="card narrow">
       <h2>처음 설정</h2>
+      <div id="suLoginBox">
+        <label>로그인 비밀번호 (6자 이상)</label>
+        <p class="muted" style="margin:4px 0">다음부터는 메일 주소와 이 비밀번호로 로그인합니다.</p>
+        <input id="suLpw" type="password" autocomplete="new-password">
+        <label>로그인 비밀번호 확인</label>
+        <input id="suLpw2" type="password" autocomplete="new-password">
+      </div>
+      <div id="suPinBox">
       <p class="muted">결재 비밀번호는 문서에 날인할 때만 입력합니다.</p>
       <label>결재 비밀번호 (숫자 4~8자리)</label>
       <input id="suPin" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password">
@@ -138,6 +153,7 @@ dl.meta dt{color:var(--sub)}dl.meta dd{margin:0}
       <p class="muted" style="margin:4px 0">흰 종이에 찍은 도장 사진도 됩니다. 흰 배경은 자동으로 지워져요. 등록하지 않으면 이름 도장이 자동으로 찍힙니다.</p>
       <div class="stampbox" id="suPrev"></div>
       <input id="suStamp" type="file" accept="image/*">
+      </div>
       <button id="suDone" class="primary full">설정 완료</button>
     </div>
   </section>
@@ -191,6 +207,12 @@ dl.meta dt{color:var(--sub)}dl.meta dd{margin:0}
         <div class="stampbox" id="meStamp"></div>
         <input id="meStampIn" type="file" accept="image/*">
         <button id="meStampSave" class="primary" hidden>이 도장으로 저장</button>
+      </div>
+      <div class="sec">
+        <label>로그인 비밀번호 변경</label>
+        <input id="meLpw" type="password" placeholder="새 로그인 비밀번호 (6자 이상)" autocomplete="new-password">
+        <input id="meLpw2" type="password" placeholder="새 로그인 비밀번호 확인" autocomplete="new-password">
+        <button id="meLpwSave">로그인 비밀번호 변경</button>
       </div>
       <div class="sec">
         <label>결재 비밀번호 변경</label>
@@ -274,14 +296,34 @@ async function loadInit() {
 }
 function afterLogin() {
   $('#meBtn').textContent = S.me.name + ' ' + (S.me.title || S.me.role);
-  if (!S.me.hasPin) return showSetup();
+  if (!S.me.hasPin || !S.me.hasLoginPw) return showSetup();
   const pending = store('openDoc');
   if (pending) { store('openDoc', ''); history.replaceState(null, '', location.pathname); return openDoc(pending); }
   goHome(S.todo ? 'todo' : (S.box || 'todo'));
 }
 
 /* ───── 로그인 ───── */
-function showLogin() { $('#step1').hidden = false; $('#step2').hidden = true; show('vLogin'); }
+function showLogin(mode) {
+  const code = mode === 'code';
+  $('#stepPw').hidden = code; $('#step1').hidden = !code; $('#step2').hidden = true;
+  const em = store('email'); if (em) { $('#pEmail').value = em; $('#lEmail').value = em; }
+  show('vLogin');
+}
+function loggedIn(r, email) {
+  S.token = r.token; store('tok', r.token); store('email', email);
+  return loadInit().then(ok => { if (ok) afterLogin(); });
+}
+$('#pLogin').onclick = async () => {
+  const email = $('#pEmail').value.trim(), password = $('#pPw').value;
+  if (!email || !password) return toast('메일 주소와 비밀번호를 입력하세요');
+  const r = await run(() => api('loginPw', { email, password }));
+  if (!r) return;
+  $('#pPw').value = '';
+  loggedIn(r, email);
+};
+$('#toCode').onclick = () => { $('#lEmail').value = $('#pEmail').value; showLogin('code'); };
+$('#toPw').onclick = () => showLogin();
+enter('#pEmail', '#pLogin'); enter('#pPw', '#pLogin');
 $('#lSend').onclick = async () => {
   const email = $('#lEmail').value.trim();
   if (!email) return toast('메일 주소를 입력하세요');
@@ -294,10 +336,9 @@ $('#lSend').onclick = async () => {
 $('#lVerify').onclick = async () => {
   const r = await run(() => api('verifyCode', { email: S.loginEmail, code: $('#lCode').value.trim() }));
   if (!r) return;
-  S.token = r.token; store('tok', r.token);
-  if (await loadInit()) afterLogin();
+  loggedIn(r, S.loginEmail);
 };
-$('#lBack').onclick = showLogin;
+$('#lBack').onclick = () => showLogin('code');
 enter('#lEmail', '#lSend'); enter('#lCode', '#lVerify');
 
 /* ───── 도장 이미지 처리: 축소 + 흰 배경 제거 ───── */
@@ -323,22 +364,31 @@ function processStamp(file) {
 }
 
 /* ───── 첫 설정 ───── */
-function showSetup() { S.newStamp = ''; $('#suPrev').innerHTML = `<img src="${seal(S.me.name)}">`; show('vSetup'); }
+function showSetup() {
+  S.newStamp = ''; $('#suPrev').innerHTML = `<img src="${seal(S.me.name)}">`;
+  $('#suLoginBox').hidden = S.me.hasLoginPw; $('#suPinBox').hidden = S.me.hasPin;
+  show('vSetup');
+}
 $('#suStamp').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
   try { S.newStamp = await processStamp(f); $('#suPrev').innerHTML = `<img src="${S.newStamp}">`; } catch (err) { toast(err.message); }
 };
 $('#suDone').onclick = async () => {
-  const a = $('#suPin').value, b = $('#suPin2').value;
-  if (!/^\d{4,8}$/.test(a)) return toast('결재 비밀번호는 숫자 4~8자리로 정해주세요');
-  if (a !== b) return toast('비밀번호가 서로 다릅니다');
+  const needL = !S.me.hasLoginPw, needP = !S.me.hasPin;
+  const l = $('#suLpw').value, l2 = $('#suLpw2').value, a = $('#suPin').value, b = $('#suPin2').value;
+  if (needL && l.length < 6) return toast('로그인 비밀번호는 6자 이상으로 정해주세요');
+  if (needL && l !== l2) return toast('로그인 비밀번호가 서로 다릅니다');
+  if (needP && !/^\d{4,8}$/.test(a)) return toast('결재 비밀번호는 숫자 4~8자리로 정해주세요');
+  if (needP && a !== b) return toast('결재 비밀번호가 서로 다릅니다');
   const ok = await run(async () => {
-    await api('setPin', { pin: a });
-    if (S.newStamp) await api('uploadStamp', { data: S.newStamp });
+    if (needL) await api('setLoginPw', { password: l });
+    if (needP) await api('setPin', { pin: a });
+    if (needP && S.newStamp) await api('uploadStamp', { data: S.newStamp });
     return true;
   });
   if (!ok) return;
-  S.me.hasPin = true; if (S.newStamp) S.me.hasStamp = true;
+  S.me.hasLoginPw = true; S.me.hasPin = true; if (S.newStamp) S.me.hasStamp = true;
+  ['#suLpw', '#suLpw2', '#suPin', '#suPin2'].forEach(x => $(x).value = '');
   toast('설정이 끝났습니다'); afterLogin();
 };
 
@@ -567,6 +617,13 @@ $('#mePinSave').onclick = async () => {
   if (a !== b) return toast('새 비밀번호가 서로 다릅니다');
   const r = await run(() => api('setPin', { oldPin: o, pin: a }));
   if (r) { toast('결재 비밀번호를 바꿨습니다'); ['#mePinOld', '#mePinNew', '#mePinNew2'].forEach(s => $(s).value = ''); }
+};
+$('#meLpwSave').onclick = async () => {
+  const a = $('#meLpw').value, b = $('#meLpw2').value;
+  if (a.length < 6) return toast('로그인 비밀번호는 6자 이상으로 정해주세요');
+  if (a !== b) return toast('새 비밀번호가 서로 다릅니다');
+  const r = await run(() => api('setLoginPw', { password: a }));
+  if (r) { toast('로그인 비밀번호를 바꿨습니다'); $('#meLpw').value = ''; $('#meLpw2').value = ''; }
 };
 $('#meBack').onclick = () => goHome();
 $('#meLogout').onclick = async () => {
