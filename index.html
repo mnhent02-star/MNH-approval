@@ -45,6 +45,11 @@ h3{margin:0 0 14px}
 .item .m{font-size:13px;color:var(--sub);display:flex;gap:10px;flex-wrap:wrap}
 .chip{font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px;background:#eee}
 .st-진행중{background:#e8f0fc;color:var(--blue)}.st-완료{background:#e8f5e9;color:var(--green)}.st-반려{background:#fdecea;color:var(--seal)}.st-회수{background:#eee;color:#777}
+.search{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.search input,.search select{margin:0;padding:10px;flex:1 1 140px;min-width:0}
+.search .q{flex:3 1 220px}
+.search button{flex:0 0 auto}
+.count{font-size:13px;color:var(--sub);margin:0 2px 8px}
 .empty{text-align:center;color:var(--sub);padding:48px 0}
 .fab{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom));padding:15px 22px;border-radius:30px;box-shadow:0 6px 20px rgba(0,0,0,.18);z-index:4}
 /* 문서 */
@@ -161,7 +166,17 @@ dl.meta dt{color:var(--sub)}dl.meta dd{margin:0}
   <!-- 목록 -->
   <section id="vHome" hidden>
     <div class="tabs" id="tabs"></div>
+    <div class="search">
+      <input id="sQ" class="q" type="search" placeholder="제목, 내용, 기안자, 부서, 문서번호, 파일명">
+      <input id="sFrom" type="date" title="기안일 시작">
+      <input id="sTo" type="date" title="기안일 끝">
+      <select id="sSt"><option value="">전체 상태</option><option>진행중</option><option>완료</option><option>반려</option><option>회수</option></select>
+      <button class="primary" id="sGo">검색</button>
+      <button class="ghost" id="sReset">초기화</button>
+    </div>
+    <p class="count" id="count"></p>
     <div id="list"></div>
+    <div class="center"><button class="ghost" id="more" hidden>더 보기</button></div>
     <button class="primary fab" id="newBtn">＋ 새 보고서</button>
   </section>
 
@@ -236,7 +251,7 @@ dl.meta dt{color:var(--sub)}dl.meta dd{margin:0}
 
 <script>
 /* ▼ Apps Script 웹 앱 URL을 붙여넣으세요 */
-const API_URL = 'https://script.google.com/macros/s/AKfycbycbZ2MPJNhd74FG4aT-ReOYYHpBmufHn37CY5mYAdJ_HSkiE9nitc3VNPUZAB60Nx4vg/exec';
+const API_URL = 'https://mnhent02-star.github.io/MNH-approval/';
 
 const $ = s => document.querySelector(s);
 const VIEWS = ['vLogin', 'vSetup', 'vHome', 'vCompose', 'vDoc', 'vMe'];
@@ -399,19 +414,37 @@ function renderTabs() {
   $('#tabs').innerHTML = tabs.map(([k, l]) => `<button data-box="${k}" class="${S.box === k ? 'on' : ''}">${l}${k === 'todo' && S.todo ? `<span class="badge">${S.todo}</span>` : ''}</button>`).join('');
 }
 $('#tabs').onclick = e => { const b = e.target.closest('button'); if (b) goHome(b.dataset.box); };
+function filters() { return { q: $('#sQ').value.trim(), from: $('#sFrom').value, to: $('#sTo').value, status: $('#sSt').value }; }
+function searching() { const f = filters(); return !!(f.q || f.from || f.to || f.status); }
 async function goHome(box) {
   if (box) S.box = box;
   show('vHome'); renderTabs();
-  $('#list').innerHTML = '<p class="empty">불러오는 중…</p>';
-  const r = await run(() => api('list', { box: S.box }));
-  if (!r) { $('#list').innerHTML = '<p class="empty">목록을 불러오지 못했습니다</p>'; return; }
-  if (S.box === 'todo') { S.todo = r.length; renderTabs(); }
-  $('#list').innerHTML = r.length ? r.map(d => `
+  $('#list').innerHTML = '<p class="empty">불러오는 중…</p>'; $('#more').hidden = true; $('#count').textContent = '';
+  S.shown = 0;
+  await loadMore();
+}
+async function loadMore() {
+  const r = await run(() => api('list', Object.assign({ box: S.box, offset: S.shown }, filters())));
+  if (!r) { if (!S.shown) $('#list').innerHTML = '<p class="empty">목록을 불러오지 못했습니다</p>'; return; }
+  if (S.box === 'todo' && !searching()) { S.todo = r.total; renderTabs(); }
+  const html = r.items.map(cardHtml).join('');
+  if (!S.shown) $('#list').innerHTML = r.items.length ? html : `<p class="empty">${searching() ? '검색 결과가 없습니다' : EMPTY[S.box]}</p>`;
+  else $('#list').insertAdjacentHTML('beforeend', html);
+  S.shown += r.items.length;
+  $('#count').textContent = r.total ? (searching() ? '검색 결과 ' : '') + r.total + '건' + (r.total > S.shown ? ` 중 ${S.shown}건 표시` : '') : '';
+  $('#more').hidden = S.shown >= r.total;
+}
+$('#more').onclick = loadMore;
+$('#sGo').onclick = () => goHome();
+$('#sReset').onclick = () => { ['#sQ', '#sFrom', '#sTo', '#sSt'].forEach(x => $(x).value = ''); goHome(); };
+enter('#sQ', '#sGo');
+function cardHtml(d) {
+  return `
     <div class="item" data-id="${esc(d.id)}">
       <div class="m"><span class="chip st-${esc(d.status)}">${esc(d.status)}</span><span>${esc(d.type)}</span><span>${esc(d.id)}</span></div>
       <div class="t">${esc(d.title)}${d.files ? ' 📎' : ''}</div>
       <div class="m"><span>${esc(d.drafter)} · ${esc(d.dept)}</span><span>${esc(d.createdAt)}</span><span>결재 ${esc(d.progress)}${d.current ? ' · 대기: ' + esc(d.current) : ''}</span></div>
-    </div>`).join('') : `<p class="empty">${EMPTY[S.box]}</p>`;
+    </div>`;
 }
 $('#list').onclick = e => { const it = e.target.closest('.item'); if (it) openDoc(it.dataset.id); };
 $('#home').onclick = () => goHome();
